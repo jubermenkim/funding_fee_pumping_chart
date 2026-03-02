@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime, timezone, timedelta
 from services import binance_client
 
@@ -36,11 +37,26 @@ def _fmt_time(ts_ms: int) -> str:
     return dt.strftime("%Y-%m-%d %H:%M")
 
 
-def _day_start_ms(ts_ms: int) -> int:
-    """Return the UTC midnight timestamp (ms) for the day that contains ts_ms."""
-    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
-    midnight = dt.replace(hour=0, minute=0, second=0, microsecond=0)
-    return int(midnight.timestamp() * 1000)
+def _hour_start_ms(ts_ms: int) -> int:
+    """Return the UTC hour-start timestamp (ms) for the hour that contains ts_ms."""
+    return (ts_ms // (3600 * 1000)) * (3600 * 1000)
+
+
+def _get_change_pct(funding_time_ms: int, mark_price: float, close_price_by_hour: dict[int, float]) -> float | None:
+    """펀딩피 시각 기준 직전 24시간 상승률 계산.
+
+    mark_price: 펀딩피 시각의 가격 (현재)
+    close_price_by_hour: 시간봉 close price lookup (open_time_ms -> close_price)
+    24시간 전 가격: funding_time_ms - 24h 에 해당하는 시간봉의 close price
+    """
+    if not mark_price:
+        return None
+    ms_24h = 24 * 3600 * 1000
+    hour_start_24h_ago = _hour_start_ms(funding_time_ms - ms_24h)
+    price_24h_ago = close_price_by_hour.get(hour_start_24h_ago)
+    if price_24h_ago and price_24h_ago != 0:
+        return (mark_price - price_24h_ago) / price_24h_ago * 100
+    return None
 
 
 async def get_top5_funding_rates(symbol: str) -> list[dict]:
@@ -49,21 +65,25 @@ async def get_top5_funding_rates(symbol: str) -> list[dict]:
     interval_hours = interval_map.get(symbol, DEFAULT_INTERVAL_HOURS)
 
     funding_limit = 730 * (24 // interval_hours)
-    klines, records = await asyncio.gather(
-        binance_client.get_daily_klines(symbol, limit=730),
-        binance_client.get_funding_rate_history(symbol, limit=funding_limit),
-    )
+    records = await binance_client.get_funding_rate_history(symbol, limit=funding_limit)
 
-    # Build day -> changePct map from klines
-    change_pct_by_day: dict[int, float] = {}
+    # 가장 오래된 펀딩피 시각을 기준으로 hourly klines 범위 결정
+    if records:
+        oldest_funding_ms = min(r["fundingTime"] for r in records)
+        # 24시간 전 가격도 필요하므로 25시간 앞당겨서 조회
+        start_ms = oldest_funding_ms - 25 * 3600 * 1000
+    else:
+        start_ms = int(time.time() * 1000) - 2 * 365 * 24 * 3600 * 1000
+    end_ms = int(time.time() * 1000)
+
+    klines = await binance_client.get_hourly_klines(symbol, start_ms, end_ms)
+
+    # Build hour -> close_price map
+    close_price_by_hour: dict[int, float] = {}
     for k in klines:
         open_time_ms = int(k[0])
-        open_price = float(k[1])
         close_price = float(k[4])
-        if open_price == 0:
-            continue
-        change_pct = (close_price - open_price) / open_price * 100
-        change_pct_by_day[open_time_ms] = change_pct
+        close_price_by_hour[open_time_ms] = close_price
 
     enriched = []
     for i, r in enumerate(records):
@@ -79,8 +99,7 @@ async def get_top5_funding_rates(symbol: str) -> list[dict]:
             mark_price = float(mark_str)
         except (ValueError, TypeError):
             mark_price = 0.0
-        day_key = _day_start_ms(r["fundingTime"])
-        change_pct = change_pct_by_day.get(day_key)
+        change_pct = _get_change_pct(r["fundingTime"], mark_price, close_price_by_hour)
         enriched.append(
             {
                 "time": _fmt_time(r["fundingTime"]),

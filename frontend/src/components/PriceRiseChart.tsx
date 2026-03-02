@@ -22,12 +22,22 @@ interface TooltipPayload {
   payload: PriceSurgeRecord;
 }
 
+function toKSTLabel(fundingTimeMs: number): string {
+  const d = new Date(fundingTimeMs);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(kst.getUTCDate()).padStart(2, "0");
+  const hh = String(kst.getUTCHours()).padStart(2, "0");
+  const min = String(kst.getUTCMinutes()).padStart(2, "0");
+  return `${mm}-${dd} ${hh}:${min}`;
+}
+
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
     <div className="bg-gray-900 border border-gray-600 rounded-lg p-3 text-sm shadow-xl">
-      <p className="text-yellow-400 font-semibold mb-1">{d.date}</p>
+      <p className="text-yellow-400 font-semibold mb-1">{toKSTLabel(d.fundingTime)}</p>
       <p className="text-white">
         24h 상승률:{" "}
         <span className="text-green-400">+{d.changePct.toFixed(2)}%</span>
@@ -49,7 +59,7 @@ export default function PriceRiseChart({ data, symbol }: Props) {
   const chartData = data.map((d, i) => ({
     ...d,
     rank: i + 1,
-    label: d.date.slice(5),
+    label: toKSTLabel(d.fundingTime),
   }));
 
   return (
@@ -105,7 +115,7 @@ export default function PriceRiseChart({ data, symbol }: Props) {
             >
               {d.normalizedRate8h.toFixed(4)}%
             </div>
-            <div className="text-gray-400 text-xs mt-0.5">{d.date.slice(5)}</div>
+            <div className="text-gray-400 text-xs mt-0.5">{toKSTLabel(d.fundingTime)}</div>
           </div>
         ))}
       </div>

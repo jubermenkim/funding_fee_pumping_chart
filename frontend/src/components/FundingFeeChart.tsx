@@ -102,6 +102,11 @@ export default function FundingFeeChart({ data, symbol }: Props) {
         {data.map((d, i) => (
           <div key={i} className="bg-gray-700 rounded-lg p-2 text-center">
             <div className="text-yellow-400 text-xs font-bold">#{i + 1}</div>
+            {d.changePct != null && (
+              <div className={`text-xs font-semibold mt-0.5 ${d.changePct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {d.changePct >= 0 ? "+" : ""}{d.changePct.toFixed(2)}%
+              </div>
+            )}
             <div
               className={`text-sm font-semibold mt-0.5 ${
                 d.normalizedRate8h >= 0 ? "text-green-400" : "text-red-400"

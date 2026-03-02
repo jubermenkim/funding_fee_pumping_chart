@@ -97,3 +97,46 @@ async def get_funding_rate_history(symbol: str, limit: int = 2200) -> list[dict]
 async def get_daily_klines(symbol: str, limit: int = 730) -> list[list]:
     """Fetch daily OHLCV klines."""
     return await get("/fapi/v1/klines", params={"symbol": symbol, "interval": "1d", "limit": limit})
+
+
+async def get_hourly_klines(symbol: str, start_time_ms: int, end_time_ms: int) -> list[list]:
+    """Fetch hourly OHLCV klines for the given time range with pagination.
+
+    Binance limits each request to 1500 candles. This function pages through
+    the full range and returns all hourly candles between start_time_ms and end_time_ms.
+    Results are cached per (symbol, start, end) key.
+    """
+    cache_key = f"hourly_{symbol}_{start_time_ms}_{end_time_ms}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    all_klines: list[list] = []
+    current_start = start_time_ms
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        while current_start < end_time_ms:
+            params: dict[str, Any] = {
+                "symbol": symbol,
+                "interval": "1h",
+                "startTime": current_start,
+                "endTime": end_time_ms,
+                "limit": 1500,
+            }
+            resp = await client.get(f"{FAPI_BASE}/fapi/v1/klines", params=params)
+            resp.raise_for_status()
+            batch: list[list] = resp.json()
+
+            if not batch:
+                break
+
+            all_klines.extend(batch)
+
+            if len(batch) < 1500:
+                break
+
+            # Advance to the next hour after the last candle
+            current_start = int(batch[-1][0]) + 3600 * 1000
+
+    _cache_set(cache_key, all_klines)
+    return all_klines
