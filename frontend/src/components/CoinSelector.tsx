@@ -11,7 +11,9 @@ interface Props {
 export default function CoinSelector({ coins, selected, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const filtered = useMemo(
     () =>
@@ -30,6 +32,16 @@ export default function CoinSelector({ coins, selected, onSelect }: Props) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [query]);
+
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const item = listRef.current.children[activeIndex] as HTMLElement;
+    item?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
 
   return (
     <div ref={containerRef} className="relative w-72">
@@ -55,15 +67,34 @@ export default function CoinSelector({ coins, selected, onSelect }: Props) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveIndex((prev) => Math.min(prev + 1, filtered.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveIndex((prev) => Math.max(prev - 1, 0));
+                } else if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (activeIndex >= 0 && activeIndex < filtered.length) {
+                    onSelect(filtered[activeIndex]);
+                    setOpen(false);
+                    setQuery("");
+                    setActiveIndex(-1);
+                  }
+                } else if (e.key === "Escape") {
+                  setOpen(false);
+                }
+              }}
               placeholder="검색..."
               className="w-full bg-gray-700 text-white placeholder-gray-400 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-yellow-400"
             />
           </div>
-          <ul className="max-h-60 overflow-y-auto">
+          <ul ref={listRef} className="max-h-60 overflow-y-auto">
             {filtered.length === 0 && (
               <li className="px-4 py-2 text-gray-400 text-sm">결과 없음</li>
             )}
-            {filtered.map((coin) => (
+            {filtered.map((coin, index) => (
               <li
                 key={coin}
                 onClick={() => {
@@ -72,7 +103,9 @@ export default function CoinSelector({ coins, selected, onSelect }: Props) {
                   setQuery("");
                 }}
                 className={`px-4 py-2 cursor-pointer text-sm transition-colors ${
-                  coin === selected
+                  index === activeIndex
+                    ? "bg-gray-600 text-white"
+                    : coin === selected
                     ? "bg-yellow-400 text-gray-900 font-semibold"
                     : "text-white hover:bg-gray-700"
                 }`}
