@@ -67,12 +67,14 @@ export default function FundingFeeChart({ data, symbol }: Props) {
   return (
     <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-white">
-          Chart 1 — 펀딩피 TOP 5
-        </h2>
-        <p className="text-gray-400 text-sm mt-0.5">
-          {symbol} · 역대 가장 낮은 펀딩피 5개
-        </p>
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-lg font-bold text-white">
+            Chart 1 — 펀딩피 TOP 5
+          </h2>
+          <p className="text-gray-400 text-sm">
+            {symbol} · 역대 가장 낮은 펀딩피 5개
+          </p>
+        </div>
       </div>
 
       <ResponsiveContainer width="100%" height={320}>
@@ -103,7 +105,7 @@ export default function FundingFeeChart({ data, symbol }: Props) {
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="mt-4 grid grid-cols-5 gap-2">
+      <div className="mt-2 grid grid-cols-5 gap-2">
         {data.map((d, i) => (
           <div key={i} className="bg-gray-700 rounded-lg p-2 text-center">
             <div className="text-yellow-400 text-xs font-bold">#{i + 1}</div>

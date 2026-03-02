@@ -65,12 +65,14 @@ export default function PriceRiseChart({ data, symbol }: Props) {
   return (
     <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-white">
-          Chart 2 — 24h 급등 TOP 5 시점의 펀딩피
-        </h2>
-        <p className="text-gray-400 text-sm mt-0.5">
-          {symbol} · 24h 상승률이 가장 높았던 5일 · 그 날의 8h 기준 펀딩피
-        </p>
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-lg font-bold text-white">
+            Chart 2 — 24h 급등 TOP 5 시점의 펀딩피
+          </h2>
+          <p className="text-gray-400 text-sm">
+            {symbol} · 24h 상승률이 가장 높았던 5일 · 그 날의 8h 기준 펀딩피
+          </p>
+        </div>
       </div>
 
       <ResponsiveContainer width="100%" height={320}>
@@ -101,7 +103,7 @@ export default function PriceRiseChart({ data, symbol }: Props) {
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="mt-4 grid grid-cols-5 gap-2">
+      <div className="mt-2 grid grid-cols-5 gap-2">
         {data.map((d, i) => (
           <div key={i} className="bg-gray-700 rounded-lg p-2 text-center">
             <div className="text-blue-400 text-xs font-bold">#{i + 1}</div>
