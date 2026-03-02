@@ -25,11 +25,11 @@ interface TooltipPayload {
 function toKSTLabel(fundingTimeMs: number): string {
   const d = new Date(fundingTimeMs);
   const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const yyyy = kst.getUTCFullYear();
   const mm = String(kst.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(kst.getUTCDate()).padStart(2, "0");
   const hh = String(kst.getUTCHours()).padStart(2, "0");
-  const min = String(kst.getUTCMinutes()).padStart(2, "0");
-  return `${mm}-${dd} ${hh}:${min}`;
+  return `${yyyy}-${mm}-${dd} ${hh}시`;
 }
 
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {

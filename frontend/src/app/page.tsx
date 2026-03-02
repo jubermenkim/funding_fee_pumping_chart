@@ -75,9 +75,11 @@ export default function Home() {
           >
             {loading ? "조회 중..." : "조회"}
           </button>
-          <p className="text-gray-500 text-sm">
-            * 모든 펀딩피는 8h 기준으로 환산됩니다
-          </p>
+          <div className="text-gray-500 text-sm space-y-1">
+            <p>* 모든 펀딩피는 8h 기준으로 전환되어 표현</p>
+            <p>* 상승률은 해당시간 기준 24h 이전과 비교 시 상승률</p>
+            <p>* 기간은 최근 2년</p>
+          </div>
         </div>
 
         {/* Error */}

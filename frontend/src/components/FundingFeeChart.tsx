@@ -22,12 +22,17 @@ interface TooltipPayload {
   payload: FundingRecord & { label: string };
 }
 
+function formatTime(time: string): string {
+  // time: "YYYY-MM-DD HH:mm" → "YYYY-MM-DD HH시"
+  return time.slice(0, 13) + "시";
+}
+
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
     <div className="bg-gray-900 border border-gray-600 rounded-lg p-3 text-sm shadow-xl">
-      <p className="text-yellow-400 font-semibold mb-1">{d.time}</p>
+      <p className="text-yellow-400 font-semibold mb-1">{formatTime(d.time)}</p>
       <p className="text-white">
         8h 표준화 펀딩피:{" "}
         <span className={d.normalizedRate8h >= 0 ? "text-green-400" : "text-red-400"}>
@@ -56,7 +61,7 @@ export default function FundingFeeChart({ data, symbol }: Props) {
   const chartData = data.map((d, i) => ({
     ...d,
     label: `#${i + 1}\n${d.time.slice(5)}`,
-    shortTime: d.time.slice(5, 13),
+    shortTime: formatTime(d.time),
   }));
 
   return (
@@ -66,7 +71,7 @@ export default function FundingFeeChart({ data, symbol }: Props) {
           Chart 1 — 펀딩피 TOP 5
         </h2>
         <p className="text-gray-400 text-sm mt-0.5">
-          {symbol} · 8h 기준 환산 · 역대 가장 낮은 펀딩피 5개
+          {symbol} · 역대 가장 낮은 펀딩피 5개
         </p>
       </div>
 
@@ -114,7 +119,7 @@ export default function FundingFeeChart({ data, symbol }: Props) {
             >
               {d.normalizedRate8h.toFixed(4)}%
             </div>
-            <div className="text-gray-400 text-xs mt-0.5">{d.time.slice(5, 13)}</div>
+            <div className="text-gray-400 text-xs mt-0.5">{formatTime(d.time)}</div>
           </div>
         ))}
       </div>
