@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from services import binance_client
 
 # Default funding interval when fundingInfo doesn't include a symbol
@@ -29,8 +29,10 @@ def _infer_interval_hours(prev_ts_ms: int, curr_ts_ms: int) -> int:
     return 8
 
 
+KST = timezone(timedelta(hours=9))
+
 def _fmt_time(ts_ms: int) -> str:
-    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).astimezone(KST)
     return dt.strftime("%Y-%m-%d %H:%M")
 
 

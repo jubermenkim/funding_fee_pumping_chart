@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from services import binance_client
 from services.funding_service import get_interval_hours_map, normalize_to_8h, DEFAULT_INTERVAL_HOURS, _infer_interval_hours
 
@@ -12,8 +12,10 @@ def _day_start_ms(ts_ms: int) -> int:
     return int(midnight.timestamp() * 1000)
 
 
+KST = timezone(timedelta(hours=9))
+
 def _fmt_time(ts_ms: int) -> str:
-    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).astimezone(KST)
     return dt.strftime("%Y-%m-%d")
 
 
